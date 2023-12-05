@@ -121,6 +121,7 @@
                 conversions.Add(curConversion);
             }
 
+            DateTime startTime = DateTime.Now;
             DateTime oldTimer = DateTime.Now;
             DateTime curTimer = DateTime.Now;
             double lastValue = 0;
@@ -149,6 +150,7 @@
                 }
             }
             
+            Console.WriteLine("Time elapsed: " + (DateTime.Now - startTime).ToString());
             return minresult;
 
         } catch (Exception e) {
