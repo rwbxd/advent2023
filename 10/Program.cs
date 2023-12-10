@@ -47,6 +47,7 @@ HashSet<char> north = new HashSet<char>(['|', 'L', 'J']);
 HashSet<char> south = new HashSet<char>(['|', '7', 'F']);
 HashSet<char> east = new HashSet<char>(['-', 'L', 'F']);
 HashSet<char> west = new HashSet<char>(['-', '7', 'J']);
+HashSet<char> pipeSymbols = new HashSet<char>(['-', '|', 'F', 'J', 'L', '7']);
 
 bool checkAbove(int i, int j) {
     if (i == 0) return false;
@@ -65,36 +66,41 @@ bool checkRight(int i, int j) {
     return west.Contains(grid[i][j+1]);
 }
 
-while (!((curVal = grid[curRow][curCol]) is '.' or '*')) {
-    grid[curRow][curCol] = '*'; length++;
+while (pipeSymbols.Contains(grid[curRow][curCol])) {
+    curVal = grid[curRow][curCol];
+    int oldRow = curRow;
+    int oldCol = curCol;
+    char curSymbol = '*';
     switch (curVal) {
         case 'F':
-            if (checkBelow(curRow, curCol)) curRow++;
-            else curCol++;
+            if (checkBelow(curRow, curCol)) {curRow++; curSymbol = 'V';}
+            else {curCol++; curSymbol = '>';}
             break;
         case '|':
-            if (checkBelow(curRow, curCol)) curRow++;
-            else curRow--;
+            if (checkBelow(curRow, curCol)) {curRow++; curSymbol = 'V';}
+            else {curRow--; curSymbol = '^';}
             break;
         case '7':
-            if (checkBelow(curRow, curCol)) curRow++;
-            else curCol--;
+            if (checkBelow(curRow, curCol)) {curRow++; curSymbol = 'V';}
+            else {curCol--; curSymbol = '<';}
             break;
         case 'J':
-            if (checkAbove(curRow, curCol)) curRow--;
-            else curCol--;
+            if (checkAbove(curRow, curCol)) {curRow--; curSymbol = '^';}
+            else {curCol--; curSymbol = '<';}
             break;
         case 'L':
-            if (checkAbove(curRow, curCol)) curRow--;
-            else curCol++;
+            if (checkAbove(curRow, curCol)) {curRow--; curSymbol = '^';}
+            else {curCol++; curSymbol = '>';}
             break;
         case '-':
-            if (checkRight(curRow, curCol)) curCol++; 
-            else curCol--;
+            if (checkRight(curRow, curCol)) {curCol++; curSymbol = '>';}
+            else {curCol--; curSymbol = '<';}
             break;
         case '_':
             break;
     }
+    grid[oldRow][oldCol] = curSymbol; length++;  
+    // Console.WriteLine(grid[curRow][curCol].ToString() + pipeSymbols.Contains(grid[curRow][curCol]).ToString());
 }
 
 Console.WriteLine("Part 1: " + (length / 2).ToString());
