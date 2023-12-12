@@ -38,7 +38,7 @@ bool FindFirstPipe(List<List<char>> grid, out int curRow, out int curCol) {
 }
 
 FindFirstPipe(grid, out curRow, out curCol);
-grid[sRow][sCol] = '*';
+
 
 int length = 1;
 char curVal;
@@ -65,6 +65,14 @@ bool checkRight(int i, int j) {
     if (j == grid[0].Count - 1) return false;
     return west.Contains(grid[i][j+1]);
 }
+
+if (checkRight(sRow, sCol) && checkAbove(sRow, sCol)) {
+    grid[sRow][sCol] = 'l';
+} else if (checkRight(sRow, sCol)) {
+    grid[sRow][sCol] = 'f';
+} else if (checkAbove(sRow, sCol)) {
+    grid[sRow][sCol] = 'j';
+} else grid[sRow][sCol] = '}';
 
 while (pipeSymbols.Contains(grid[curRow][curCol])) {
     curVal = grid[curRow][curCol];
@@ -96,18 +104,44 @@ while (pipeSymbols.Contains(grid[curRow][curCol])) {
             if (checkRight(curRow, curCol)) {curCol++; curSymbol = '>';}
             else {curCol--; curSymbol = '<';}
             break;
+        case 'S':
+            if (checkRight(curRow, curCol) && checkAbove(curRow, curCol)) curSymbol = 'l';
+            else if (checkRight(curRow, curCol)) curSymbol = 'f';
+            else if (checkAbove(curRow, curCol)) curSymbol = 'j';
+            else curSymbol = '}';
+            break;
         case '_':
             break;
     }
+    if (curVal is 'F' or 'L' or 'J') curSymbol = (char) (curVal - 'A' + 'a');
+    if (curVal is '7') curSymbol = '}';
     grid[oldRow][oldCol] = curSymbol; length++;  
     // Console.WriteLine(grid[curRow][curCol].ToString() + pipeSymbols.Contains(grid[curRow][curCol]).ToString());
 }
 
 Console.WriteLine("Part 1: " + (length / 2).ToString());
 
-foreach (List<char> row in grid) {
-    foreach (char c in row) {
+Dictionary<char, char> cornerPairs = new Dictionary<char, char>();
+cornerPairs.Add('f', '7');
+cornerPairs.Add('l', 'j');
+
+bool inPipe;
+HashSet<char> p2pipes = new HashSet<char>(['V', '^']);
+for (int i = 0; i < grid.Count; i++) {
+    List<char> row = grid[i];
+    inPipe = false;
+    for (int j = 0; j < row.Count; j++) {
+        char c = row[j];
         Console.Write(c);
+        if (p2pipes.Contains(c)) {
+            inPipe = !inPipe;
+        } else if (c is 'j' or 'l') {
+            inPipe = !inPipe;
+        } else if (c is 'f' or '}' or '*' or '>' or '<') {
+        } else if (inPipe) {
+            p2++;
+        }
     }
     Console.WriteLine();
 }
+Console.WriteLine(p2);
