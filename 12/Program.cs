@@ -91,13 +91,9 @@ long findPossibilities(string x, string[] nums, int depth=0, string label="") {
     if (x[0] == '?') {
         long result = 0;
         result += findPossibilities(x.Remove(0, 1).Insert(0, "."), nums, depth + 1, "?=.") + findPossibilities(x.Remove(0, 1).Insert(0, "#"), nums, depth + 1, "?=#");
-        if (!cache.ContainsKey(x)) {
-            cache.Add(x, new Dictionary<string, long>());    
-        }
         // Console.WriteLine(depthTabs(depth + 1) + "Adding cache[" + x + "] with (" + nums2key(nums) + ", " + result.ToString() + ")");
-        if (!cache[x].ContainsKey(nums2key(nums))) {cache[x].Add(nums2key(nums), result);}
         // Console.WriteLine(depthTabs(depth + 1) + "Found: " + result.ToString());
-        return result;
+        return cacheAndReturn(x, nums, result);
     } else { // x[0] == '#'
         if (!Regex.Match(x, generateRegexString(nums)).Success) {
         // Console.WriteLine(depthTabs(depth + 1) + "Invalid string.");
@@ -109,13 +105,9 @@ long findPossibilities(string x, string[] nums, int depth=0, string label="") {
             return 0;
         }
         long result = findPossibilities(x[(int.Parse(nums[0]) + 1)..], nums[1..], depth + 1, "del #");
-        if (!cache.ContainsKey(x)) {
-            cache.Add(x, new Dictionary<string, long>());    
-        }
         // Console.WriteLine(depthTabs(depth + 1) + "Adding cache[" + x + "] with (" + nums2key(nums) + ", " + result.ToString() + ")");
-        if (!cache[x].ContainsKey(nums2key(nums))) {cache[x].Add(nums2key(nums), result);}
         // Console.WriteLine(depthTabs(depth + 1) + "Found: " + result.ToString());
-        return result;
+        return cacheAndReturn(x, nums, result);
     }
 }
 
