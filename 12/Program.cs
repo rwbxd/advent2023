@@ -1,4 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Text.RegularExpressions;
 
 string input = "C:\\Users\\Will\\Documents\\code\\advent2023\\12\\input";
 StreamReader reader = new StreamReader(input);
@@ -8,13 +10,14 @@ long sum = 0;
 int iter = 0;
 
 Dictionary<string, Dictionary<string, long>> cache = new Dictionary<string, Dictionary<string, long>>();
+DateTime startTime = DateTime.Now;
 while ((line = reader.ReadLine()!) != null) {
-    Console.WriteLine(iter++);
+    Console.WriteLine(iter++.ToString() + " | " + TimeSpan.FromSeconds((DateTime.Now - startTime).TotalSeconds).ToString(@"hh\:mm\:ss\:fff"));
     string[] segments = line.Split();
     string record = segments[0].Trim('.');
-    // record = string.Join('?', Enumerable.Repeat(segments[0], 5));
+    record = string.Join('?', Enumerable.Repeat(segments[0], 5));
     string[] nums = segments[1].Split(',');
-    // nums = Enumerable.Repeat(nums, 5);
+    nums = Enumerable.Repeat(nums, 5).SelectMany(x => x).ToArray();
     long poss = findPossibilities(record, nums);
     Console.WriteLine("Possibilities: " + poss);
     sum += poss;
@@ -52,38 +55,67 @@ string nums2key(string[] nums) {
     return string.Join(',', nums);
 }
 
+string depthTabs(int depth) {
+    return string.Join("", Enumerable.Repeat("\t", depth));
+}
+
 long findPossibilities(string x, string[] nums, int depth=0, string label="") {
+    Console.WriteLine(x);
+    // Console.WriteLine(depthTabs(depth) + x + " | [" + string.Join(",", nums) + "]");
     x = x.Trim('.');
-    Console.WriteLine(string.Join(" | ", [x, nums2key(nums), depth.ToString(), label]));
+    // Console.WriteLine(string.Join(" | ", [x, nums2key(nums), depth.ToString(), label]));
     if (cache.ContainsKey(x) && cache[x].ContainsKey(nums2key(nums))) {
+        // Console.WriteLine(depthTabs(depth) + "Returning cached result: " + cache[x][nums2key(nums)].ToString());
         return cache[x][nums2key(nums)];
     }
+
     // generateRegexString is our "is this string possible" string - if impossible, return 0
-    if (!Regex.Match(x, generateRegexString(nums)).Success) { return 0; }
+    // if (!Regex.Match(x, generateRegexString(nums)).Success) {
+    //     // Console.WriteLine(depthTabs(depth + 1) + "Invalid string.");
+    //     return 0;
+    // }
+
     // if there's no #'s needed, return the 1 possibility (all '.'s)
-    if (nums.Length == 0) {return 1;}
-    if (!x.Contains('?')) {
-        return Regex.Match(x.Trim('.'), generateRegexString(nums)).Success ? 1 : 0;
-    } else {
-        if (x[0] == '?') {
-            long result = 0;
-            result += findPossibilities(x[1..], nums, depth + 1, "?=.") + findPossibilities(x.Remove(0, 1).Insert(0, "#"), nums, depth + 1, "?=#");
-            if (!cache.ContainsKey(x)) {
-                cache.Add(x, new Dictionary<string, long>());    
-            }
-            Console.WriteLine("Adding cache[" + x + "] with (" + nums2key(nums) + ", " + result.ToString() + ")");
-            if (!cache[x].ContainsKey(nums2key(nums))) {cache[x].Add(nums2key(nums), result);}
-            return result;
-        } else {
-            nums[0] = (int.Parse(nums[0]) - 1).ToString();
-            if (nums[0] == "0") {
-                nums = nums[1..];
-                if (x[1] == '#') {return 0;}
-                return findPossibilities(x[2..], nums, depth + 1, "del # and nums[0]");
-            }
-            long result = findPossibilities(x[1..], nums, depth + 1, "del #");
-            return result;
+    // also, if there's no possible variations (and we know it's valid per above), return the 1 possibility
+    if (nums.Length == 0 || !x.Contains('?')) {
+        // Console.WriteLine(depthTabs(depth + 1) + "Valid string.");
+        // return 1;
+
+        if (!Regex.Match(x, generateRegexString(nums)).Success) {
+        // Console.WriteLine(depthTabs(depth + 1) + "Invalid string.");
+            return 0;
         }
+        return 1;
+    }
+
+    if (x[0] == '?') {
+        long result = 0;
+        result += findPossibilities(x.Remove(0, 1).Insert(0, "."), nums, depth + 1, "?=.") + findPossibilities(x.Remove(0, 1).Insert(0, "#"), nums, depth + 1, "?=#");
+        if (!cache.ContainsKey(x)) {
+            cache.Add(x, new Dictionary<string, long>());    
+        }
+        // Console.WriteLine(depthTabs(depth + 1) + "Adding cache[" + x + "] with (" + nums2key(nums) + ", " + result.ToString() + ")");
+        if (!cache[x].ContainsKey(nums2key(nums))) {cache[x].Add(nums2key(nums), result);}
+        // Console.WriteLine(depthTabs(depth + 1) + "Found: " + result.ToString());
+        return result;
+    } else { // x[0] == '#'
+        if (!Regex.Match(x, generateRegexString(nums)).Success) {
+        // Console.WriteLine(depthTabs(depth + 1) + "Invalid string.");
+            return 0;
+        }
+        if (nums.Length == 1) { return 1; }
+        if (!Regex.Match(x, generateRegexString(nums)).Success) {
+        // Console.WriteLine(depthTabs(depth + 1) + "Invalid string.");
+            return 0;
+        }
+        long result = findPossibilities(x[(int.Parse(nums[0]) + 1)..], nums[1..], depth + 1, "del #");
+        if (!cache.ContainsKey(x)) {
+            cache.Add(x, new Dictionary<string, long>());    
+        }
+        // Console.WriteLine(depthTabs(depth + 1) + "Adding cache[" + x + "] with (" + nums2key(nums) + ", " + result.ToString() + ")");
+        if (!cache[x].ContainsKey(nums2key(nums))) {cache[x].Add(nums2key(nums), result);}
+        // Console.WriteLine(depthTabs(depth + 1) + "Found: " + result.ToString());
+        return result;
     }
 }
 
@@ -92,9 +124,9 @@ string generateRegexString(string[] nums) {
         return @"^[\.?]*$";
     }
 
-    string pattern = @"^[\.?]*";
-    for (int i = 0; i < nums.Length - 1; i++) pattern += @"[#?]{" + nums[i] + @"}[\.?]+";
-    pattern += @"[#?]{" + nums.Last() + @"}[\.?]*$";
-    return pattern;
+    StringBuilder pattern = new StringBuilder(@"^[\.?]*");
+    for (int i = 0; i < nums.Length - 1; i++) pattern.Append(@"[#?]{" + nums[i] + @"}[\.?]+");
+    pattern.Append(@"[#?]{" + nums.Last() + @"}[\.?]*$");
+    return pattern.ToString();
 }
 Console.WriteLine(sum);
