@@ -119,6 +119,12 @@ long findPossibilities(string x, string[] nums, int depth=0, string label="") {
     }
 }
 
+long cacheAndReturn(string x, string[] nums, long v) {
+    if (!cache.ContainsKey(x)) {cache.Add(x, new Dictionary<string, long>());}
+    if (!cache[x].ContainsKey(nums2key(nums))) {cache[x].Add(nums2key(nums), v);}
+    return v;
+}
+
 string generateRegexString(string[] nums) {
     if (nums.Length == 0) {
         return @"^[\.?]*$";
