@@ -13,9 +13,9 @@ while ((line = reader.ReadLine()!) != null) {
     Console.WriteLine(iter++.ToString() + " | " + TimeSpan.FromSeconds((DateTime.Now - startTime).TotalSeconds).ToString(@"hh\:mm\:ss\:fff"));
     string[] segments = line.Split();
     string record = segments[0].Trim('.');
-    // record = string.Join('?', Enumerable.Repeat(segments[0], 5));
+    record = string.Join('?', Enumerable.Repeat(segments[0], 5));
     string[] nums = segments[1].Split(',');
-    // nums = Enumerable.Repeat(nums, 5).SelectMany(x => x).ToArray();
+    nums = Enumerable.Repeat(nums, 5).SelectMany(x => x).ToArray();
     long poss = findPossibilities(record, nums);
     Console.WriteLine("Possibilities: " + poss);
     sum += poss;
@@ -108,11 +108,18 @@ long findPossibilities(string x, string[] nums, int depth=0, string label="") {
 
         if (x.Length < firstNum) {return cacheAndReturn(x, nums, result);}
         // Case where ? becomes '#'
-        if (x.Length == firstNum) {
-            result += findPossibilities(x[(firstNum)..], nums[1..], depth + 1, "?=#");
-        } else {
-            if (x[(firstNum)] == '#') {return cacheAndReturn(x, nums, result);}
-            result += findPossibilities(x[(firstNum+1)..], nums[1..], depth + 1, "?=#");
+        bool b = true;
+        for (int i = 1; i < firstNum; i++) {
+            if (x[i] == '.') { b = false; } // Invalid for there to be a .
+        }
+        if (b) {
+            if (x.Length == firstNum) {
+                result += findPossibilities(x[(firstNum)..], nums[1..], depth + 1, "?=#");
+            } else {
+                if (x[(firstNum)] == '#') {return cacheAndReturn(x, nums, result);}
+                // Console.WriteLine("tesT");
+                result += findPossibilities(x[(firstNum+1)..], nums[1..], depth + 1, "?=#");
+            }
         }
         return cacheAndReturn(x, nums, result);
     } else { // x[0] == '#'
