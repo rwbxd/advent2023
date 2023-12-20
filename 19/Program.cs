@@ -40,23 +40,26 @@ void Part2() {
     }
 
     long result = 0;
-    for (int x = 1; x <= 4000; x++) {
-        Console.WriteLine("x = " + x.ToString());
-        for (int m = 1; m <= 4000; m++) { 
-            Console.WriteLine("m = " + m.ToString());
-            for (int a = 1; a <= 4000; a++) {
-                for (int s = 1; s <= 4000; s++) {
-                    Part curPart = new Part(x,m,a,s);
-                    string curWorkflow = "in";
-                    while (!(curWorkflow is "A" or "R")) {
-                        curWorkflow = workflows[curWorkflow].Work(curPart);
-                    }
-                    if (curWorkflow is "A") {
-                        result += curPart.Sum;
-                    }
-                }
-            }
+    Queue<RangeWorkflowPair> queue = new Queue<RangeWorkflowPair>();
+    queue.Enqueue(new RangeWorkflowPair(new Range(), "in"));
+    while (queue.Count != 0) {
+        RangeWorkflowPair rwp = queue.Dequeue();
+        Console.WriteLine(rwp.workflow + " " + rwp.r.ToString());
+        Range range = rwp.r;
+        if (rwp.workflow == "R") {continue;}
+        if (rwp.workflow == "A") {
+            result += range.GetPossibilities(); 
+            Console.WriteLine(range.GetPossibilities());
+            continue;
         }
+        Workflow w = workflows[rwp.workflow];
+
+        Range newRange;
+        foreach (Rule rule in w.rules) {
+            range.Split(rule, out newRange);
+            queue.Enqueue(new RangeWorkflowPair(newRange, rule.Key));
+        }
+        queue.Enqueue(new RangeWorkflowPair(range, w.fallback));
     }
     
     Console.WriteLine(result);
@@ -64,8 +67,8 @@ void Part2() {
 }
 
 class Workflow {
-    List<Rule> rules = [];
-    string fallback;
+    public List<Rule> rules = [];
+    public string fallback;
     public Workflow(string x) {
         string[] ruleStrings = x.Split(',');
         foreach (string s in ruleStrings[..^1]) {
@@ -96,7 +99,7 @@ class Rule {
     public char Letter;
     public int Rating;
     public string Key;
-    bool GT;
+    public bool GT;
     public Rule(char letter, bool greaterThan, int rating, string key) {
         Letter = letter; GT = greaterThan; Rating = rating; Key = key;
     }
@@ -129,5 +132,87 @@ class Part {
         ratings['a'] = a;
         ratings['s'] = s;
         Sum = x + m + a + s;
+    }
+}
+
+class Range {
+    public long xMin;
+    public long xMax;
+    public long mMin;
+    public long mMax;
+    public long aMin;
+    public long aMax;
+    public long sMin;
+    public long sMax;
+
+    public Range() {
+        xMin = 1; mMin = 1; aMin = 1; sMin = 1;
+        xMax = 4000; mMax = 4000; aMax = 4000; sMax = 4000;
+    }
+
+    public Range(Range r) {
+        this.xMin = r.xMin; this.xMax = r.xMax;
+        this.mMin = r.mMin; this.mMax = r.mMax;
+        this.aMin = r.aMin; this.aMax = r.aMax;
+        this.sMin = r.sMin; this.sMax = r.sMax;
+    }
+
+    public override string ToString()
+    {
+        return String.Format("x: {0}-{1}, m: {2}-{3}, a: {4}-{5}, s: {6}-{7}", xMin, xMax, mMin, mMax, aMin, aMax, sMin, sMax);
+    }
+
+    public void Split(Rule rule, out Range newRange) {
+        Split(rule.Letter, rule.GT, rule.Rating, out newRange);
+    }
+
+    public void Split(char letter, bool gt, int num, out Range newRange) {
+        newRange = new Range(this);
+        Range lowRange;
+        Range highRange;
+        int highOffset = 0;
+        int lowOffset = 0;
+
+        // New range gets accepted by rule
+        if (gt) {
+            lowRange = this;
+            highRange = newRange;
+            highOffset = 1;
+        } else {
+            lowRange = newRange;
+            highRange = this;
+            lowOffset = 1;
+        }
+
+        switch (letter) {
+            case 'x':
+                highRange.xMin = num + highOffset;
+                lowRange.xMax = num - lowOffset;
+                break;
+            case 'm':
+                highRange.mMin = num + highOffset;
+                lowRange.mMax = num - lowOffset;
+                break;
+            case 'a':
+                highRange.aMin = num + highOffset;
+                lowRange.aMax = num - lowOffset;
+                break;
+            case 's':
+                highRange.sMin = num + highOffset;
+                lowRange.sMax = num - lowOffset;
+                break;
+        }
+    }
+
+    public long GetPossibilities() {
+        return (xMax - xMin + 1) * (mMax - mMin + 1) * (aMax - aMin + 1) * (sMax - sMin + 1);
+    }
+}
+
+class RangeWorkflowPair {
+    public Range r;
+    public string workflow;
+    public RangeWorkflowPair(Range r, string workflow) {
+        this.r = r; this.workflow = workflow;
     }
 }
