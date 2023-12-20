@@ -1,4 +1,4 @@
-int day = 0
+int day = 0;
 string input = "C:\\Users\\Will\\Documents\\code\\advent2023\\" + day + "\\input";
 Part1();
 Part2();
