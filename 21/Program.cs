@@ -56,30 +56,31 @@ void Part2() {
     }
     Point marker = new Point(-1, -1);
     Queue<Point> points = new Queue<Point>();
-    points.Enqueue(new Point(SI, SJ));
+    points.Enqueue(new Point(SI, SJ, true, 0));
     BoundsChecker bc = new BoundsChecker(grid.Count, grid[0].Count);
-    HashSet<Point> hs = new HashSet<Point>();
-    for (i = 0; i < 26501365; i++) {
-        if (i % 10000 == 0) {Console.WriteLine(i);}
-        // Console.WriteLine(points.Count);
-        points.Enqueue(marker);
-        HashSet<Point> seen = new HashSet<Point>();
-        Point p;
-        while (!(p = points.Dequeue()).Equals(marker)) {
-            foreach (var adj in p.GetAdjacent()) {
-                Point adjwrap = bc.Wraparound(adj);
-                if (!seen.Contains(adjwrap) && grid[adjwrap.i][adjwrap.j] != '#') {
-                    points.Enqueue(adjwrap);
-                    seen.Add(adjwrap);
-                }
+    HashSet<Point> seen = new HashSet<Point>();
+    while (points.Count != 0) {
+        Point p = points.Dequeue();
+        foreach (var adj in p.GetAdjacent()) {
+            if (!seen.Contains(adj) && bc.Check(adj.i, adj.j) && grid[adj.i][adj.j] != '#') {
+                points.Enqueue(adj);
+                seen.Add(adj);
             }
         }
     }
+    // https://github.com/villuna/aoc23/wiki/A-Geometric-solution-to-advent-of-code-2023,-day-21
     Console.WriteLine(points.Count);
+    // Console.WriteLine(seen.Count(x => x.even && x.dist <= 64));
+    long n = 202300;
+    long even_corners = seen.Count(x => x.even && x.dist > 65) * n;
+    long odd_corners = seen.Count(x => !x.even && x.dist > 65) * (n+1);
+    long even = seen.Count(x => x.even) * n*n;
+    long odd = seen.Count(x => !x.even) * (n+1)*(n+1);
+    Console.WriteLine(even + odd + even_corners - odd_corners);
 }
 
-class Point(int i, int j) {
-    public int i = i; public int j = j;
+class Point(int i, int j, bool even = true, int dist = 0) {
+    public int i = i; public int j = j; public bool even = even; public int dist = dist;
 
     public override bool Equals(object? obj)
     {
@@ -103,7 +104,10 @@ class Point(int i, int j) {
     }
 
     public List<Point> GetAdjacent() {
-        return [new Point(i-1, j), new Point(i+1, j), new Point(i, j-1), new Point(i, j+1)];
+        return [new Point(i-1, j, !even, dist+1),
+                new Point(i+1, j, !even, dist+1),
+                new Point(i, j-1, !even, dist+1),
+                new Point(i, j+1, !even, dist+1)];
     }
 }
 
