@@ -1,7 +1,9 @@
 ﻿int day = 23;
 string input = "C:\\Users\\Will\\Documents\\code\\advent2023\\" + day + "\\input";
 Part1();
-Part2();
+Thread thread = new Thread(Part2, 4 * 1024 * 1024);
+thread.Start();
+thread.Join();
 
 void Part1() {
     StreamReader reader = new StreamReader(input);
