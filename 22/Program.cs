@@ -52,11 +52,64 @@ void Part1() {
         }
         if (!supporter) {count++;}
     }
-    Console.WriteLine(count);
+    Console.WriteLine("Part 1: " + count);
 }
 
 void Part2() {
     StreamReader reader = new StreamReader(input);
+    List<Brick> bricks = new List<Brick>();
+    string line;
+    int brickNum = 1;
+    while ((line = reader.ReadLine()!) != null) {
+        bricks.Add(new Brick(line, brickNum++));
+    }
+
+    ShiftBricks(bricks);
+    bricks.Sort();
+
+    Dictionary<Brick, HashSet<Brick>> supportedBy = new Dictionary<Brick, HashSet<Brick>>();
+    Dictionary<Brick, HashSet<Brick>> supporting = new Dictionary<Brick, HashSet<Brick>>();
+    foreach (Brick b in bricks) {
+        supportedBy[b] = []; // how many it supports
+        supporting[b] = []; // what supports it
+    }
+
+    bricks.Reverse();
+    for (int z = bricks.First().z2; z >= 1; z--) {
+        Console.WriteLine(z.ToString() + ": " + string.Join(",", bricks.Where(x => x.z1 >= z && x.z2 <= z).Select(x => x.ID)));
+    }
+
+    foreach (Brick b in bricks) {
+        foreach (Brick otherB in bricks) {
+            if (b.Equals(otherB)) {continue;}
+
+            if (otherB.z1 != (b.z2 + 1)) {continue;}
+
+            if (b.Overlaps(otherB)) {
+                // Console.WriteLine(b.ID + " supports " + otherB.ID);
+                supportedBy[otherB].Add(b);
+                supporting[b].Add(otherB);
+            }
+        }
+    }
+    
+    int count = 0;
+    
+    foreach (Brick b in bricks) {
+        HashSet<Brick> falling = [b];
+        Queue<Brick> q = new Queue<Brick>(supporting[b].Where(x => supportedBy[x].Count == 1));
+        while (q.Count != 0) {
+            Brick s = q.Dequeue();
+            if (falling.Contains(s)) {continue;}
+
+            falling.Add(s);
+            foreach (var v in supporting[s].Where(x => supportedBy[x].All(y => falling.Contains(y)))) {
+                q.Enqueue(v);
+            }
+        }
+        count += falling.Count - 1;
+    }
+    Console.WriteLine("Part 2: " + count);
 }
 
 void ShiftBricks(List<Brick> bricks) {
