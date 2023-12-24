@@ -23,6 +23,11 @@ void Part1() {
         supportingList[b] = []; // what is it supporting
     }
 
+    bricks.Reverse();
+    for (int z = bricks.First().z2; z >= 1; z--) {
+        Console.WriteLine(z.ToString() + ": " + string.Join(",", bricks.Where(x => x.z1 >= z && x.z2 <= z).Select(x => x.ID)));
+    }
+
     foreach (Brick b in bricks) {
         foreach (Brick otherB in bricks) {
             if (b.Equals(otherB)) {continue;}
@@ -30,7 +35,7 @@ void Part1() {
             if (otherB.z1 != (b.z2 + 1)) {continue;}
 
             if (b.Overlaps(otherB)) {
-                Console.WriteLine(b.ID + " supports " + otherB.ID);
+                // Console.WriteLine(b.ID + " supports " + otherB.ID);
                 supportingBricks[otherB]++;
                 supportingList[b].Add(otherB);
             }
@@ -59,7 +64,7 @@ void ShiftBricks(List<Brick> bricks) {
     foreach (Brick b in bricks) {
         while (b.z1 > 1) {
             bool canMove = true;
-            foreach (Brick otherB in bricks) {
+            foreach (Brick otherB in bricks.Where(x => (x.z2 + 1) == b.z1)) {
                 // Console.WriteLine("Comparing " + b + " and " + otherB);
                 if ((otherB.z2 + 1) < b.z1) {
                     // Console.WriteLine("Continuing...");
