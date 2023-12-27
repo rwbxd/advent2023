@@ -1,4 +1,7 @@
-﻿int day = 24;
+﻿using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+
+int day = 24;
 string input = "C:\\Users\\Will\\Documents\\code\\advent2023\\" + day + "\\input";
 Part1();
 Part2();
@@ -48,7 +51,7 @@ void Part1() {
             }
         }
     }
-    Console.WriteLine(count);
+    Console.WriteLine("Part 1: " + count);
 }
 
 void Part2() {
@@ -63,54 +66,92 @@ void Part2() {
     while (true) {
         Console.WriteLine("secondTimestep = " + secondTimestep);
         for (int firstTimestep = 1; firstTimestep < secondTimestep; firstTimestep++) {
-            Console.WriteLine("firstTimestep = " + firstTimestep);
+            // Console.WriteLine("firstTimestep = " + firstTimestep);
             for (int h1i = 0; h1i < h.Count; h1i++) {
-                var h1 = h[h1i].PositionAtTime(firstTimestep);
+                var h1 = h[h1i].PositionAtTime(firstTimestep); // Find the first hail
                 // Console.WriteLine("Testing " + h[h1i] + " with collision time " + firstTimestep);
+                // Console.WriteLine("\t1:" + h1i);
                 for (int h2i = 0; h2i < h.Count; h2i++) {
                     if (h1i == h2i) {continue;}
                     // Console.WriteLine("\tTesting " + h[h2i] + " with collision time " + secondTimestep);
-                    var h2 = h[h2i].PositionAtTime(secondTimestep);
-                    HashSet<int> seenTimesteps = [h1i, h2i];
-                    Hail expecting = new Hail(h2.px, h2.py, h2.pz, (h2.px - h1.px) / (secondTimestep - firstTimestep), (h2.py - h1.py) / (secondTimestep - firstTimestep), (h2.pz - h1.pz) / (secondTimestep - firstTimestep));
-                    expecting = expecting.Next();
+                    var h2 = h[h2i].PositionAtTime(secondTimestep); // Find the second hail
+                    // Console.WriteLine("\t2:" + h2i);
+                    HashSet<int> seenTimesteps = [firstTimestep, secondTimestep];
+                    Hail expecting = new Hail(h1.px - (h2.px - h1.px) / (secondTimestep - firstTimestep),
+                                            h1.py - (h2.py - h1.py) / (secondTimestep - firstTimestep),
+                                            h1.pz - (h2.pz - h1.pz) / (secondTimestep - firstTimestep),
+                                            (h2.px - h1.px) / (secondTimestep - firstTimestep), (h2.py - h1.py) / (secondTimestep - firstTimestep), (h2.pz - h1.pz) / (secondTimestep - firstTimestep));
+                    // Console.WriteLine("\t" + expecting);
 
                     bool valid = true;
                     int thirdTimestep = secondTimestep+1;
-                    for (int h3i = 0; h3i < h.Count; h3i++) {
+                    for (int h3i = 0; h3i < h.Count; h3i++) { // For each hail
                         if (h3i == h1i || h3i == h2i) {continue;}
-                        var h3 = h[h3i].PositionAtTime(thirdTimestep);
-                        var eCopy = expecting.Copy();
+                        var h3 = h[h3i];
+                        // Console.WriteLine("\t\tX:" + h3);
+                        
+                        double xint = Intersect(h3.px, h3.vx, expecting.px, expecting.vx);
+                        double yint = Intersect(h3.py, h3.vy, expecting.py, expecting.vy);
+                        double zint = Intersect(h3.pz, h3.vz, expecting.pz, expecting.vz);
 
-                        int compareX = eCopy.px.CompareTo(h3.px);
-                        int compareY = eCopy.py.CompareTo(h3.px);
-                        int compareZ = eCopy.pz.CompareTo(h3.pz);
-                        while(compareX == eCopy.px.CompareTo(h3.px) && compareY == eCopy.py.CompareTo(h3.px) && compareZ == eCopy.pz.CompareTo(h3.pz)) {
-                            if (h3.Equals(eCopy)) {
-                                if (seenTimesteps.Contains(thirdTimestep)) {
-                                    valid = false;
-                                    break;
-                                } else {
-                                    seenTimesteps.Add(thirdTimestep);
-                                    thirdTimestep = secondTimestep+1;
-                                    break;
-                                }
-                            }
-                            eCopy = eCopy.Next();
-                            h3 = h3.Next();
-                            thirdTimestep++;
-                        }
-                        if (h3.Equals(eCopy)) {
-                            if (seenTimesteps.Contains(thirdTimestep)) {
+                        List<double> needToEqual = [];
+                        if (h3.vx == expecting.vx) {
+                            if (h3.px != expecting.px) {
                                 valid = false;
                                 break;
-                            } else {
-                                seenTimesteps.Add(thirdTimestep);
-                                thirdTimestep = secondTimestep+1;
+                            }
+                        } else {
+                            needToEqual.Add(xint);
+                        }
+
+                        if (h3.vy == expecting.vy) {
+                            if (h3.py != expecting.py) {
+                                valid = false;
                                 break;
                             }
+                        } else {
+                            needToEqual.Add(yint);
                         }
-                        if (!valid) {break;}
+
+                        if (h3.vz == expecting.vz) {
+                            if (h3.pz != expecting.pz) {
+                                valid = false;
+                                break;
+                            }
+                        } else {
+                            needToEqual.Add(zint);
+                        }
+                        // Console.WriteLine("\t\t\t" + xint + " " + yint + " " + zint);
+
+                        if (needToEqual.Any(x => x != needToEqual[0])) {
+                            // Console.WriteLine("not all were equal");
+                            valid = false;
+                            break;
+                        }
+
+                        if (!IsInteger(needToEqual[0])) {
+                            // Console.WriteLine("not integer");
+                            valid = false;
+                            break;
+                        }
+
+                        int newTimestamp = (int) needToEqual[0];
+                        // Console.WriteLine(newTimestamp);
+
+                        if (seenTimesteps.Contains(newTimestamp)) {
+                            // Console.WriteLine("already seen " + newTimestamp);
+                            // foreach (var a in seenTimesteps) {
+                                // Console.WriteLine("\t" + a);
+                            // }
+                            valid = false;
+                            break;
+                        }
+
+                        seenTimesteps.Add(newTimestamp);
+                        // Console.WriteLine("adding " + newTimestamp);
+                        // foreach (var a in seenTimesteps) {
+                            // Console.WriteLine("\t" + a);
+                        // }
                     }
                     if (valid) {
                         Console.WriteLine(h1.px - (expecting.vx * firstTimestep) + h1.py - (expecting.vy * firstTimestep) + h1.pz - (expecting.vz * firstTimestep));
@@ -134,6 +175,12 @@ bool pastPoint(double intersectX, double px, double slope) {
 
 bool IsInteger(double d) {
     return Math.Abs(d % 1) <= (double.Epsilon * 100);
+}
+
+double Intersect(double ap, double av, double bp, double bv) {
+    // av(x) + ap == bv(x) + bp
+    // (av + bv)(x) == bp - ap
+    return (bp - ap) / (av - bv);
 }
 
 class Hail{
